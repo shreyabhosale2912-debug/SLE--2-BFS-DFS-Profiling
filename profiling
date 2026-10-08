@@ -1,0 +1,92 @@
+import time
+from collections import deque
+
+maze = [
+    [0, 1, 0, 0, 0],
+    [0, 1, 0, 1, 0],
+    [0, 0, 0, 1, 0],
+    [1, 1, 0, 0, 0],
+    [0, 0, 0, 1, 0]
+]
+start, goal = (0, 0), (4, 4)
+
+def get_neighbors(cell):
+    r, c = cell
+    for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        nr, nc = r + dr, c + dc
+        if 0 <= nr < 5 and 0 <= nc < 5 and maze[nr][nc] == 0:
+            yield (nr, nc)
+
+# --- BFS with Node Counter ---
+def solve_bfs(start, goal):
+    queue = deque([[start]])
+    visited = {start}
+    nodes_expanded = 0
+    
+    while queue:
+        path = queue.popleft()
+        curr = path[-1]
+        nodes_expanded += 1
+        
+        if curr == goal:
+            return path, nodes_expanded
+            
+        for nxt in get_neighbors(curr):
+            if nxt not in visited:
+                visited.add(nxt)
+                queue.append(path + [nxt])
+    return None, nodes_expanded
+
+# --- DFS with Node Counter ---
+def solve_dfs(start, goal):
+    stack = [[start]]
+    visited = {start}
+    nodes_expanded = 0
+    
+    while stack:
+        path = stack.pop()
+        curr = path[-1]
+        nodes_expanded += 1
+        
+        if curr == goal:
+            return path, nodes_expanded
+            
+        for nxt in get_neighbors(curr):
+            if nxt not in visited:
+                visited.add(nxt)
+                stack.append(path + [nxt])
+    return None, nodes_expanded
+
+# --- Profiling & Execution ---
+if _name_ == "_main_":
+    ITERATIONS = 50000
+
+    # 1. Profile BFS
+    t0 = time.perf_counter()
+    for _ in range(ITERATIONS):
+        bfs_path, bfs_nodes = solve_bfs(start, goal)
+    bfs_total_time = (time.perf_counter() - t0) * 1000  # Total time in ms
+    bfs_avg_time = bfs_total_time / ITERATIONS          # Time per single execution
+
+    # 2. Profile DFS
+    t0 = time.perf_counter()
+    for _ in range(ITERATIONS):
+        dfs_path, dfs_nodes = solve_dfs(start, goal)
+    dfs_total_time = (time.perf_counter() - t0) * 1000  # Total time in ms
+    dfs_avg_time = dfs_total_time / ITERATIONS          # Time per single execution
+
+    # Determine Better Algorithm
+    better_time = "BFS" if bfs_avg_time < dfs_avg_time else "DFS"
+    better_nodes = "BFS" if bfs_nodes < dfs_nodes else ("DFS" if dfs_nodes < bfs_nodes else "Equal")
+    better_path = "BFS" if len(bfs_path) < len(dfs_path) else ("DFS" if len(dfs_path) < len(bfs_path) else "Equal")
+
+    # --- Print SLE-2 Formatted Comparison Table ---
+    print("\n" + "="*60)
+    print("           SLE-2 PROFILING COMPARISON TABLE           ")
+    print("="*60)
+    print(f"{'Metric':<22} | {'BFS (Algorithm A)':<18} | {'DFS (Algorithm B)':<18} | {'Better?':<8}")
+    print("-" * 72)
+    print(f"{'Avg Time per run (ms)':<22} | {bfs_avg_time:<18.6f} | {dfs_avg_time:<18.6f} | {better_time:<8}")
+    print(f"{'Nodes Expanded':<22} | {bfs_nodes:<18} | {dfs_nodes:<18} | {better_nodes:<8}")
+    print(f"{'Path Length (Steps)':<22} | {len(bfs_path):<18} | {len(dfs_path):<18} | {better_path:<8}")
+    print("="*60 + "\n")
